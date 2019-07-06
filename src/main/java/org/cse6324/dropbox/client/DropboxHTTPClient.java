@@ -1,12 +1,14 @@
 package org.cse6324.dropbox.client;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
-import org.apache.http.client.HttpClient;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.cse6324.dropbox.common.FileInfo;
+import org.json.JSONArray;
 
 /**
  * HTTPClient
@@ -15,38 +17,42 @@ public class DropboxHTTPClient {
     private String serverAddress;
     private String rootDirectory;
     private String username;
-    private HttpClient httpclient = new 
-    DropboxHTTPClient(String username, String rootDirectory, String serverAddress) {
+    private CloseableHttpClient httpClient = HttpClients.createDefault();
+    private String serverURLForUser;
+    public DropboxHTTPClient(String username, String rootDirectory, String serverAddress) {
         this.username = username;
         this.rootDirectory = rootDirectory;
         this.serverAddress = serverAddress;
+        serverURLForUser = String.format("http://%s/%s", serverAddress, username);
     }
 
-    private int sendGet() throws Exception {
-        httpcli
-        String url = String.format("http://192.168.137.1:8080/%d/directoryinfo/existing", username);
-
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        int responseCode = con.getResponseCode();
-        BufferedReader in = new BufferedReader(
-                new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuffer response = new StringBuffer();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+    FileInfo[] getInfoFiles(String infoType) {
+        HttpGet get = new HttpGet(serverURLForUser + String.format("/directoryinfo/%s", infoType));
+        FileInfo[] fileInfos = null;
+        try {
+            CloseableHttpResponse response = httpClient.execute(get);
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                HttpEntity entity = response.getEntity();
+                String jsonText = EntityUtils.toString(entity);
+                JSONArray json = new JSONArray(jsonText);
+                fileInfos = new FileInfo[json.length()];
+                for (int i = 0; i < json.length(); i++) {
+                    fileInfos[i] = new FileInfo(json.getJSONObject(i));
+                }
+            }
+            response.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        in.close();
-        return responseCode;
+        return fileInfos;
     }
 
-    FileInfo[] getExistingFiles() {
-        return null;
+    public FileInfo[] getExistingFiles() {
+        return getInfoFiles("existing");
     }
 
-    FileInfo[] getDeletedFiles() {
-        return null;
+    public FileInfo[] getDeletedFiles() {
+        return getInfoFiles("deleted");
     }
 
     boolean uploadFile(String filepath) {

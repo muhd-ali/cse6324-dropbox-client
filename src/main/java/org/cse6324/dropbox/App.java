@@ -1,5 +1,10 @@
 package org.cse6324.dropbox;
 
+import java.util.Arrays;
+
+import org.cse6324.dropbox.client.DropboxHTTPClient;
+import org.cse6324.dropbox.common.FileInfo;
+
 /**
  * Hello world!
  */
@@ -12,6 +17,11 @@ public final class App {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        DropboxHTTPClient httpClient = new DropboxHTTPClient("user0000", "./userdata", "localhost:8080");
+        FileInfo[] fileInfos;
+        fileInfos = httpClient.getExistingFiles();
+        System.out.println(Arrays.toString(fileInfos));
+        fileInfos = httpClient.getDeletedFiles();
+        System.out.println(Arrays.toString(fileInfos));
     }
 }
