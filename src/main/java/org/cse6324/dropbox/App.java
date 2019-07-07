@@ -23,7 +23,7 @@ public final class App {
         System.out.println(Arrays.toString(fileInfos));
         fileInfos = httpClient.getDeletedFiles();
         System.out.println(Arrays.toString(fileInfos));
-        boolean status = httpClient.uploadFile("folder1\\ccs.pdf");
+        boolean status = httpClient.deleteFile("folder1\\ccs.pdf");
         System.out.println(status);
     }
 }

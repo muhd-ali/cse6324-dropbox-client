@@ -136,7 +136,7 @@ public class DropboxHTTPClient {
      * @param   filepath  should be the path of file relative to root directory
      * @return  <code>true</code> if the operation was successful and <code>false</code> otherwise.
      */
-    boolean deleteFile(String filepath) {
+    public boolean deleteFile(String filepath) {
         boolean returnStatus = false;
         HttpDelete get = new HttpDelete(serverURLForUser + String.format("/file/%s", encode(filepath)));
         try {
