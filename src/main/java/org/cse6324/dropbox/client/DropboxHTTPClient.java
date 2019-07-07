@@ -15,6 +15,8 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -65,15 +67,29 @@ public class DropboxHTTPClient {
     /**
      * @param   filepath  should be the path of file relative to root directory
      */
-    boolean uploadFile(String filepath) {
+    Path localPathForFile(String filepath) {
+        return Paths.get(rootDirectory, filepath);
+    }
+
+    /**
+     * @param   filepath  should be the path of file relative to root directory
+     * @return  <code>true</code> if the operation was successful and <code>false</code> otherwise.
+     */
+    public boolean uploadFile(String filepath) {
         boolean returnStatus = false;
-        HttpPost get = new HttpPost(serverURLForUser + String.format("/file/%s", encode(filepath)));
+        HttpPost post = new HttpPost(serverURLForUser + String.format("/file/%s", encode(filepath)));
         try {
-            CloseableHttpResponse response = httpClient.execute(get);
-            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                returnStatus = true;
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            File file = localPathForFile(filepath).toFile();
+            if (file.exists()) {
+                builder.addPart("file", new FileBody(file));
+                post.setEntity(builder.build());
+                CloseableHttpResponse response = httpClient.execute(post);
+                if (response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) {
+                    returnStatus = true;
+                }
+                response.close();
             }
-            response.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -87,6 +103,7 @@ public class DropboxHTTPClient {
 
     /**
      * @param   filepath  should be the path of file relative to root directory
+     * @return  <code>true</code> if the operation was successful and <code>false</code> otherwise.
      */
     public boolean downloadFile(String filepath) {
         boolean returnStatus = false;
@@ -96,9 +113,7 @@ public class DropboxHTTPClient {
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 HttpEntity entity = response.getEntity();
                 BufferedInputStream bis = new BufferedInputStream(entity.getContent());
-                Path localFile = Paths.get(rootDirectory, filepath);
-                System.out.println(localFile);
-                File file = localFile.toFile();
+                File file = localPathForFile(filepath).toFile();
                 if (!file.exists()) {
                     file.getParentFile().mkdirs();
                     file.createNewFile();
@@ -119,6 +134,7 @@ public class DropboxHTTPClient {
 
     /**
      * @param   filepath  should be the path of file relative to root directory
+     * @return  <code>true</code> if the operation was successful and <code>false</code> otherwise.
      */
     boolean deleteFile(String filepath) {
         boolean returnStatus = false;
