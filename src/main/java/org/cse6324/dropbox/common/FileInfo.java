@@ -1,13 +1,7 @@
 package org.cse6324.dropbox.common;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.json.JSONObject;
 
@@ -25,11 +19,11 @@ public class FileInfo {
         this.lastModified = lastModified;
     }
 
-    public FileInfo(Path filepath, Path userPath) {
-        this.filepath = userPath.relativize(filepath).toString();
+    public FileInfo(Path filepath, Path rootPath) {
+        this.filepath = rootPath.relativize(filepath).toString();
         File f = filepath.toFile();
         lastModified = f.lastModified();
-        hash = generateMD5(filepath);
+        hash = "";
     }
 
     public FileInfo(JSONObject json) {
@@ -63,35 +57,6 @@ public class FileInfo {
         return (
             filepath.equals(other.filepath)
         );
-    }
-
-    private static String generateMD5(Path path) {
-        MessageDigest md;
-        FileInputStream inputStream = null;
-        try {
-            inputStream = new FileInputStream(path.toFile());
-            md = MessageDigest.getInstance("MD5");
-            FileChannel channel = inputStream.getChannel();
-            ByteBuffer buff = ByteBuffer.allocate(2048);
-            while (channel.read(buff) != -1) {
-                buff.flip();
-                md.update(buff);
-                buff.clear();
-            }
-            byte[] hashValue = md.digest();
-            return new String(hashValue);
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        } catch (IOException e) {
-            return null;
-        } finally {
-            try {
-                if (inputStream != null)
-                    inputStream.close();
-            } catch (IOException e) {
-
-            }
-        }
     }
 
     /**
